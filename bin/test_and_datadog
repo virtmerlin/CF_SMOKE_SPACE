@@ -2,7 +2,7 @@
 
 DIR=$(dirname $0)
 
-starttime=$(date +%s)
+STARTTIME=$(date +%s)
 
 cd $DIR/../smoke
 if ginkgo -r -slowSpecThreshold=300 -v -trace
@@ -13,30 +13,33 @@ else
 fi
 echo Test completed with exit status: $EXITSTATUS
 
-currenttime=$(date +%s)
+ENDTIME=$(date +%s)
+RUNTIME=$(($(($ENDTIME-$STARTTIME))/60))
 
 ##
 # Post to Datadog
-curl -X POST -H "Content-type: application/json" \
+echo "Posting to Datadog"
+
+curl -v -X POST -H "Content-type: application/json" \
   -d "{ \"series\" :
          [{\"metric\":\"smoke.status\",
-          \"points\":[[$currenttime, $cf_smoke_success]],
+          \"points\":[$ENDTIME, $cf_smoke_success]],
           \"type\":\"gauge\",
           \"tags\":[\"deployment:$DEPLOYMENT\",\"loggregator_enabled:$loggregator_enabled\"]
         }]
       }" \
-"https://app.datadoghq.com/api/v1/series?api_key=${DATADOG_API_KEY}"
+"https://app.datadoghq.com/api/v1/series?api_key=${DATADOG_API_KEY}" 2>&1
 
 ELAPSED_TIME=`expr $currenttime - $starttime`
 
-curl -X POST -H "Content-type: application/json" \
+curl -v -X POST -H "Content-type: application/json" \
   -d "{ \"series\" :
-         [{\"metric\":\"smoke.execution_time_ms\",
-          \"points\":[[$currenttime, $ELAPSED_TIME]],
+         [{\"metric\":\"smoke.execution_time_minutes\",
+          \"points\":[[$ENDTIME, $RUNTIME]],
           \"type\":\"gauge\",
           \"tags\":[\"deployment:$DEPLOYMENT\",\"loggregator_enabled:$loggregator_enabled\"]
         }]
       }" \
-"https://app.datadoghq.com/api/v1/series?api_key=${datadog_key}"
+"https://app.datadoghq.com/api/v1/series?api_key=${DATADOG_API_KEY}" 2>&1
 
 exit $EXITSTATUS

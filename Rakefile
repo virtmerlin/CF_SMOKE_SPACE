@@ -28,9 +28,11 @@ task :login do
   api_endpoint = ENV.fetch("CF_API")
   user_name = ENV.fetch("CF_USER")
   password = ENV.fetch("CF_PASS")
+  test_org = ENV.fetch("CF_ORG")
+  test_space = ENV.fetch("CF_SMOKE_SPACE")
 
-  puts %x{ cf api #{api_endpoint} }
-  puts %x{ cf login -u #{user_name} -p #{password} -o cloudops -s cloudops }
+  puts %x{ cf api #{api_endpoint} --skip-ssl-validation}
+  puts %x{ cf login -u #{user_name} -p #{password} -o #{test_org} -s #{test_space} --skip-ssl-validation }
 end
 
 desc "logout of cloudfoundry"
